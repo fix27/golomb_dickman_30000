@@ -1,6 +1,3 @@
-# A084945 Decimal expansion of Golomb-Dickman constant.
-# Terms a(0)..a(39999) are the first 40000 digits after the decimal point.
-# Computed with interval arithmetic (Arb); source: golomb_dickman.py, 40000-digit certified run.
 0 6
 1 2
 2 4
