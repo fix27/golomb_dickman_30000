@@ -1,0 +1,19 @@
+{
+  "chunk": 200,
+  "format": "gd-checkpoint-v3",
+  "parameters": {
+    "D": "40000",
+    "EGbits": "193564",
+    "Ebits": "133010",
+    "G": "30",
+    "K_L": "117064",
+    "K_R": "124623",
+    "S": "133074",
+    "cf_min_u": "20000.0",
+    "h": "9.173124908556929e-05"
+  },
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]",
+  "python_flint": "0.9.0",
+  "source_sha256": "ad3ac403ec0e56f824ef789d8aff0819a79b3ba88ac7cfcf41cb68f9fd788464"
+}
