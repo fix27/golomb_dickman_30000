@@ -1,0 +1,8 @@
+# SHA-256 checksums for the 40,000-digit Golomb-Dickman artifacts.
+# Git commit: 7f043cb (2026-11-08)
+# Verify (Git Bash / Linux / macOS): sha256sum -c SHA256SUMS.txt
+c73af643198da299d2e624e3c2f69d05439efcddbbefa7cec176ac63f993bed3  b084945.txt
+6e28d6c30e73ba4285668747539d84205fdf35981d8a96809f89141fa3543cfc  golomb_dickman_40000_certified.txt
+fbae757900983bd4fb6421c5f27bf9602af1a1bfc013e4c501bb9da2b5a65327  golomb_dickman_40000_digits.txt
+99377813ec9c48ed84cf4649067f4ba4ee3fb7ef74f15102bf92f75cdd400324  golomb_dickman.py
+648a6a3974b2802fe9a613a44fccd2c3424d2e337967758d9238ce6e06e04c6b  smoke_60.txt
