@@ -1,0 +1,7 @@
+﻿name = "golombDickman"
+version = "0.1.0"
+defaultTargets = ["GolombDickman"]
+
+[[require]]
+name = "mathlib"
+path = "C:/Users/fix12/lean/mathlib4"
