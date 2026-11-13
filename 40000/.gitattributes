@@ -1,0 +1,23 @@
+# Line-ending policy for the 40000-digit Golomb-Dickman artifacts.
+#
+# The certificates, digits, b-file and Python sources are published in
+# canonical LF form.  Without this file a Windows checkout with
+# core.autocrlf=true would rewrite them to CRLF and every SHA-256 in
+# SHA256SUMS.txt would change.  OEIS also requires LF-only b-files.
+#
+# The patterns below apply to this directory and its subdirectories.
+
+* text=auto eol=lf
+
+*.py   text eol=lf
+*.txt  text eol=lf
+*.md   text eol=lf
+*.ps1  text eol=lf
+*.tex  text eol=lf
+*.bib  text eol=lf
+
+# Checkpoint pickles are binary: never touch them.
+*.pkl  binary
+gd_rigorous_ckpt_40000/** -text
+gd_rigorous_ckpt_60/**     -text
+__pycache__/**             -text

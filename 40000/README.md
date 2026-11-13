@@ -15,7 +15,7 @@ $$\left\lfloor 10^{40000}\Lambda_-\right\rfloor
 
 Значит, первые **40 000** десятичных знаков доказаны (усечение, без округления),
 а не просто вычислены с плавающей точкой. Ширина интервала — примерно
-$10^{-40042.4}$, то есть остаётся около 42 запасных знаков.
+$10^{-40042.26}$, то есть остаётся около 42 запасных знаков.
 
 - [`golomb_dickman_40000_digits.txt`](golomb_dickman_40000_digits.txt) — 40 000 цифр после запятой одной строкой.
 - [`b084945.txt`](b084945.txt) — готовый b-file для OEIS A084945, термы `n = 0..39999`.
@@ -29,7 +29,14 @@ $10^{-40042.4}$, то есть остаётся около 42 запасных �
 | `golomb_dickman_40000_digits.txt` | 40 001 B | Только 40 000 цифр после запятой |
 | `b084945.txt` | ~302 KB | b-file для OEIS A084945: 40 000 термов, только данные |
 | `verify_40000.py` | ~5 KB | Автономная проверка сертификата, цифр и b-file |
-| `smoke_60.txt` | 435 B | Сертификат пробного прогона на 60 знаках |
+| `verify_checkpoints.py` | ~21 KB | Аудит всех 1 209 чекпоинтов: структура, покрытие, точные суммы |
+| `verify_checkpoints_arb.py` | ~40 KB | Глубокая проверка: пересчёт узлов в Arb (нужен `python-flint`) |
+| `verify_nodes_decimal.py` | ~18 KB | Пересчёт хвостов и выбранных чанков без Arb (`decimal`) |
+| `VERIFICATION.md` | ~12 KB | Что и как проверяется, найденные дефекты, база доверия |
+| `SHA256SUMS.txt` | ~1.5 KB | Контрольные суммы всех артефактов (канонический LF) |
+| `.gitattributes` | 711 B | Запрет автопреобразования переводов строк в git |
+| `.gitignore` | 214 B | Исключение `__pycache__/` и локальных кэшей |
+| `smoke_60.txt` | 431 B | Сертификат пробного прогона на 60 знаках |
 | `gd_rigorous_ckpt_40000/` | ~70 MB | Чекпоинты кусков для D = 40 000 (1210 файлов) |
 
 ## Быстрая проверка
@@ -45,7 +52,7 @@ python verify_40000.py
 ```text
 OK: 40000 digits certified
   interval: lam_lo/2^133074 .. lam_hi/2^133074
-  interval width ~ 10^-40042.4
+  interval width ~ 10^-40042.3
   b-file: 40000 terms, indices 0..39999
   first 102 digits match OEIS A084945
   SHA-256:
@@ -59,6 +66,66 @@ OK: 40000 digits certified
 3. что отдельный файл цифр совпадает с сертификатом;
 4. что b-file содержит ровно 40 000 термов `n = 0..39999` и каждая цифра совпадает;
 5. что первые 102 цифры совпадают с OEIS A084945.
+
+## Полная проверка
+
+`verify_40000.py` проверяет только опубликованные артефакты. Чтобы проверить
+сами исходные данные, нужны ещё три скрипта; подробности — в
+[`VERIFICATION.md`](VERIFICATION.md).
+
+### 1. Аудит всех чекпоинтов (только стандартная библиотека)
+
+```bash
+python verify_checkpoints.py
+```
+
+Скрипт заново читает все 1 209 файлов `gd_rigorous_ckpt_40000/c_*.pkl`,
+проверяет структуру и покрытие индексов `[-K_L, K_R]`, пересчитывает точные
+целые суммы `Lsum`/`Hsum` и убеждается, что из них вместе с поправками
+`B` и `TR+TL+B` получаются ровно те концы интервала, что записаны в
+сертификате. Ожидаемый вывод:
+
+```text
+OK: checkpoint audit passed
+  meta: D=40000 G=30 Ebits=133010 S=133074 K_L=117064 K_R=124623 chunk=200
+  chunks: 1209 (expected 1209)
+  nodes covered: 241688
+  lower correction B = 1
+  upper correction C = TR + TL + B = 65673984721697
+  certificate width: 10^-40042.260249
+  guard digits: 40042.26
+```
+
+### 2. Пересчёт узлов в Arb (нужен `python-flint`)
+
+```bash
+python -m pip install python-flint
+python verify_checkpoints_arb.py --audit          # константы и поправки
+python verify_checkpoints_arb.py --sample 20      # 20 кусков, ~минуты
+python verify_checkpoints_arb.py --all --jobs 8   # все 1 209 кусков, часы
+```
+
+Глубокая проверка не импортирует `golomb_dickman.py`: она независимо
+реализует ряд, цепную дробь Стилтьеса и асимптотику для $E_1$, заново
+считает $M$, $B_{\rm disc}$, $\tau_R$, $\tau_L$ и проверяет, что каждый
+пересчитанный кусок лежит внутри сохранённого. Результаты кэшируются в
+`%LOCALAPPDATA%\gd_verify_cache\D40000` (вне репозитория); повторный запуск
+продолжает с места остановки.
+
+### 3. Пересчёт без Arb (запасной вариант)
+
+```bash
+python verify_nodes_decimal.py --plan            # B_disc и хвосты
+python verify_nodes_decimal.py --chunks 20       # суммы 20 чанков, 100 знаков
+python verify_nodes_decimal.py --methods         # сверка трёх формул для E1
+```
+
+Нужен только `decimal` из стандартной библиотеки. `--plan` заново считает
+$M$, $B_{\rm disc}$, $\tau_R$, $\tau_L$ и проверяет, что из них получаются
+ровно те поправки, которые записаны в сертификате; `--chunks` пересчитывает
+выбранные чанки и сверяет первые 100 знаков суммы с сохранённым интервалом.
+Это численная согласованность, а не доказательство: полный строгий пересчёт —
+только `verify_checkpoints_arb.py --all`.
 
 ## Как воспроизвести
 
@@ -147,7 +214,7 @@ first **40,000 decimal digits** of the Golomb–Dickman constant
 $\lambda = \int_0^\infty e^{-u-E_1(u)}\,du = 0.6243299885\ldots$.
 The certificate gives integer bounds $[\Lambda_-,\Lambda_+]\ni\lambda$ with
 $\lfloor 10^{40000}\Lambda_-\rfloor=\lfloor 10^{40000}\Lambda_+\rfloor$, so the
-digits are proven by truncation. The interval width is about $10^{-40042.4}$.
+digits are proven by truncation. The interval width is about $10^{-40042.26}$.
 
 The computation uses the trapezoidal rule after the Takahashi–Mori substitution,
 explicit tail and discretization bounds (Trefethen–Weideman), Stieltjes continued
@@ -156,6 +223,9 @@ cited theorems. See `golomb_dickman.py` for the full proof and
 `golomb_dickman_40000_certified.txt` for the result. `b084945.txt` is a ready
 b-file for OEIS A084945 with terms $n=0\ldots39999$.
 
-Run `python verify_40000.py` for a dependency-free verification.
+Run `python verify_40000.py` for a dependency-free check of the published
+certificate, digits and b-file, and `python verify_checkpoints.py` for the
+stdlib audit of all 1,209 chunks. `verify_checkpoints_arb.py --all` recomputes
+every node with Arb (`python-flint`). See `VERIFICATION.md`.
 
 </details>

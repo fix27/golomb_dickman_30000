@@ -18,6 +18,7 @@ Run from any directory:
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import sys
 from pathlib import Path
@@ -140,7 +141,9 @@ def main() -> None:
         fail("first 102 digits do not match OEIS A084945")
 
     width_bits = lam_hi - lam_lo
-    width_log10 = (width_bits.bit_length() - 1) * 0.3010299956639812 - scale_bits * 0.3010299956639812
+    # log10(width) = (log2(width) - S) * log10(2); log2() on a large int is exact
+    # enough for one decimal place (it does not go through float conversion).
+    width_log10 = (math.log2(width_bits) - scale_bits) * math.log10(2)
 
     print(f"OK: {digits_count} digits certified")
     print(f"  interval: lam_lo/2^{scale_bits} .. lam_hi/2^{scale_bits}")
