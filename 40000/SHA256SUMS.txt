@@ -1,8 +1,19 @@
-# SHA-256 checksums for the 40,000-digit Golomb-Dickman artifacts.
-# Git commit: 7f043cb (2026-11-08)
-# Verify (Git Bash / Linux / macOS): sha256sum -c SHA256SUMS.txt
+# SHA-256 checksums for the Golomb-Dickman 40000-digit certificate bundle.
+# Canonical form: UTF-8/ASCII text, LF line endings, no BOM (see .gitattributes).
+# Verify with:  sha256sum -c SHA256SUMS.txt
+#        or:    Get-FileHash <file> -Algorithm SHA256
+556b5eac29892ec39f46df9613dc4c5cc29e8d24789f1918f123175feeee6591  .gitattributes
+afa1ca75b0ef5fbd5739197715895fe85c7424a8b012a2d22aeb6fb71049ca5c  .gitignore
 c73af643198da299d2e624e3c2f69d05439efcddbbefa7cec176ac63f993bed3  b084945.txt
-6e28d6c30e73ba4285668747539d84205fdf35981d8a96809f89141fa3543cfc  golomb_dickman_40000_certified.txt
-fbae757900983bd4fb6421c5f27bf9602af1a1bfc013e4c501bb9da2b5a65327  golomb_dickman_40000_digits.txt
 99377813ec9c48ed84cf4649067f4ba4ee3fb7ef74f15102bf92f75cdd400324  golomb_dickman.py
-648a6a3974b2802fe9a613a44fccd2c3424d2e337967758d9238ce6e06e04c6b  smoke_60.txt
+8892c0715f1afbb271c9f07cc9658cea0f3ca83c2dda3ec7d23b447dc908de9c  golomb_dickman_40000_certified.txt
+fbae757900983bd4fb6421c5f27bf9602af1a1bfc013e4c501bb9da2b5a65327  golomb_dickman_40000_digits.txt
+dd8cde48e0e8b103b8d14186c3ea2d1ae242daf93d032beef63efebece9c1f2b  OEIS_SUBMISSION.md
+58bf21848e93fad009bd6e39b01d923d53bd867eef47e0a538479e9b3bd04830  PUBLICATION_CHECKLIST.md
+3c591f06aa397a0eeac45f50ae56c0baf817d78f60da881b5ff6b54826efee8f  README.md
+047ff0471acb07482be15a5cdfc7a65ef14c3193372022e3b1dc9b144098e0ee  smoke_60.txt
+6bc0bf6938c5646cc6fbfb391437b6a1ea153844296ae973d06c97351948ca2a  VERIFICATION.md
+f02462fdf8a48e7719aecc3efcd24ff4682e367784c8e57d4d3635d40a9848ad  verify_40000.py
+cf098ea2ef76e354c8863087fd2d7f980bb4986a1c14aabeb6b3566b2d0221d1  verify_checkpoints.py
+3842fbae32da32e0f181ae1f37b1f2f535bf288722536596f44f3274269fd9ac  verify_checkpoints_arb.py
+2d552ca58ed2fac75ca06bc36ee7f958c421736c5e1210dd2e9ff08746ede121  verify_nodes_decimal.py
