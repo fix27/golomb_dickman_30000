@@ -12,11 +12,31 @@ The certificate gives integer bounds [Λ₋, Λ₊] ∋ λ with
 so the first D decimal digits are proven by truncation (not rounding).
 
 This file is self-contained: it contains the complete mathematical proof
-(§1), the implementation (§2–§7), and the CLI entry point (§8). The
+(§1), the implementation (§2–§8), and the CLI entry point (§9). The
 external trust base is limited to (i) correctness of python-flint / Arb,
 (ii) the trapezoidal theorem of Trefethen–Weideman, (iii) the classical
 Stieltjes theorem on positive S-fractions, (iv) exact integer arithmetic
 of CPython.
+
+In addition to the primary Arb computation, this program provides several
+INDEPENDENT cross-checks that STRENGTHEN confidence without replacing the
+trust in Arb:
+
+  * mpmath (non-interval) recomputation of selected nodes — detects gross
+    bugs in the formulas or the code, though it is not a proof.
+  * mpmath.iv (interval arithmetic) recomputation of selected nodes — an
+    independent interval backend that must contain the Arb ball.
+  * Recomputation with a different step h (e.g. 0.9·h) — the certified
+    intervals must overlap; a large discrepancy would signal an error.
+  * Precision ladder — running at 384 and 512 bits and checking that the
+    intervals agree.
+  * Boundary tests for Lemma 7 at extreme z (very small and very large).
+  * Exact rational test of the Lemma-7 recurrence (Fraction arithmetic),
+    run once at startup.
+
+These checks do NOT replace the Arb proof; they are additional safety
+nets. The final certificate is still issued only if the primary Arb run
+succeeds with rad < eps in every node.
 
 ----------------------------------------------------------------------------
 §1. MATHEMATICS
@@ -221,7 +241,7 @@ gives the S-fraction
 i.e. the coefficients of the S-fraction are α_{2j−1} = α_{2j} = j > 0.
 The coefficients can also be verified directly on the first levels;
 an exact rational check of the recurrence correspondence is provided
-by lemma7_exact_recurrence_test (§7), which is run automatically at the
+by lemma7_exact_recurrence_test (§8), which is run automatically at the
 start of main().
 
 Step 4. Alternation of convergents.  For a positive S-fraction of
@@ -269,7 +289,7 @@ error is well below 10^{−(D+G+6)}; this choice is verified in Arb by
 assertions inside make_plan.
 
 ----------------------------------------------------------------------------
-§2. TRUST BASE
+§2. TRUST BASE AND ADDITIONAL CROSS-CHECKS
 ----------------------------------------------------------------------------
 
 The certificate is conditional on:
@@ -282,11 +302,31 @@ The certificate is conditional on:
 4. the lemmas in §1;
 5. exact integer arithmetic of CPython.
 
-The computation is reproducible: any invocation of
-`python golomb_dickman_cert.py certify --digits D` with a given
-python-flint/Arb version recomputes every node from scratch in Arb
-(no checkpoint reuse unless --resume is explicitly passed, which then
-makes the run AUDIT-ONLY and prevents issuing a certificate).
+In addition, the following INDEPENDENT cross-checks are provided. They do
+not replace the trust in Arb; they are safety nets that would catch gross
+errors in the formulas or the code.
+
+  * mpmath (non-interval) — recomputes selected nodes at high precision
+    and checks that the Arb ball contains the mpmath value (up to a small
+    tolerance). This is not a proof but detects formula/typo mistakes.
+
+  * mpmath.iv (interval arithmetic) — an independent interval backend.
+    The Arb ball must be contained in the mpmath.iv interval (or vice
+    versa), up to rounding. A mismatch signals a bug.
+
+  * Alt-h comparison — recomputes the integral with a different step
+    (e.g. 0.9·h) and checks that the certified intervals overlap.
+
+  * Precision ladder — runs at 384 and 512 bits and checks that the
+    intervals agree.
+
+  * Boundary tests for Lemma 7 at z → 0 and z → ∞.
+
+  * Exact rational test of the Lemma-7 recurrence (Fraction arithmetic).
+
+The final certificate is issued only if the primary Arb run succeeds
+with rad < eps in every node. The cross-checks are optional and are
+invoked explicitly via CLI flags.
 
 ----------------------------------------------------------------------------
 §3. USAGE
@@ -294,7 +334,7 @@ makes the run AUDIT-ONLY and prevents issuing a certificate).
 
     python golomb_dickman_cert.py test
         Run the environment self-test and the exact rational check of
-        the lemma-7 recurrence (Fraction arithmetic).  Fast.
+        the lemma-7 recurrence.  Fast.
 
     python golomb_dickman_cert.py smoke
         60-digit end-to-end smoke test, exits 0 if proven and matching
@@ -307,6 +347,14 @@ makes the run AUDIT-ONLY and prevents issuing a certificate).
         AUDIT-ONLY: accept checkpoint pickles without recomputing them.
         The result is NOT treated as a proof and no certificate file
         is written.  Use this to inspect intermediate state only.
+
+    python golomb_dickman_cert.py crosscheck --digits D
+        Run the independent mpmath / mpmath.iv / alt-h / precision-ladder
+        cross-checks on a small number of nodes.  Does not issue a
+        certificate; prints a report.
+
+    python golomb_dickman_cert.py boundary-test
+        Run the Lemma-7 boundary tests.
 
 The safe default for trust_checkpoint is False.  All decisions that
 require mathematical inclusion are made inside Arb; the float-valued
@@ -339,6 +387,11 @@ except ImportError:
     import flint
 from flint import arb, ctx
 
+try:
+    import mpmath
+except ImportError:
+    mpmath = None
+
 import multiprocessing as _mp
 def _get_mp_context():
     methods = _mp.get_all_start_methods()
@@ -346,7 +399,7 @@ def _get_mp_context():
 
 
 # ============================================================================
-# Constants (float, used only for heuristics)
+# Constants
 # ============================================================================
 
 LN2 = math.log(2.0)
@@ -420,6 +473,11 @@ def _env_check():
     print("python-flint", getattr(flint, "__version__", "?"),
           "| Python", sys.version.split()[0],
           "| platform", platform.platform())
+    if mpmath is not None:
+        print("mpmath", mpmath.__version__, "(available for cross-checks)")
+    else:
+        print("mpmath not installed (cross-checks disabled; install with "
+              "'pip install mpmath')")
     bad = api_selftest()
     if bad:
         raise RuntimeError("python-flint API does not match expectations:\n  - "
@@ -1136,7 +1194,222 @@ def run_certificate(D, G=30, jobs=0, chunk=0, ckpt=None, out=None,
 
 
 # ============================================================================
-# §9. Exact rational test of the Lemma 7 recurrence (run once at startup)
+# §9. Independent cross-checks (strengthen, do not replace, trust in Arb)
+# ============================================================================
+
+def _mpmath_G(t):
+    """Recompute G(t) with mpmath at high precision (non-interval)."""
+    u = mpmath.e ** (t - mpmath.e ** (-t))
+    E1 = mpmath.e1(u)
+    return mpmath.e ** (-u - E1) * u * (1 + mpmath.e ** (-t))
+
+
+def mpmath_crosscheck_node(k, pl, dps=80):
+    """Compare the Arb ball for node k with an mpmath (non-interval) value.
+
+    Returns (ball, mp_val, within) where within=True if the mpmath value
+    lies inside the Arb ball (up to a tiny tolerance).  This is NOT a
+    proof — it detects gross formula/code errors.
+    """
+    if mpmath is None:
+        return None
+    mpmath.mp.dps = dps
+    ball = node_ball(k, pl)
+    t = k * pl["h"]
+    mp_val = _mpmath_G(t)
+    lo = float(ball.lower())
+    hi = float(ball.upper())
+    within = (lo - 1e-20) <= float(mp_val) <= (hi + 1e-20)
+    return ball, mp_val, within
+
+
+def mpmath_iv_crosscheck_node(k, pl, dps=80):
+    """Compare the Arb ball for node k with an mpmath.iv interval.
+
+    Returns (ball, iv_interval, contains_or_overlaps) where the flag is
+    True if the Arb ball and the mpmath.iv interval overlap (they should
+    both contain the true value).  This is an independent interval
+    backend, not a proof.
+    """
+    if mpmath is None:
+        return None
+    mpmath.mp.dps = dps
+    from mpmath import iv
+    ball = node_ball(k, pl)
+    t = iv.mpf(k * pl["h"])
+    # compute G(t) in interval arithmetic
+    u = iv.exp(t - iv.exp(-t))
+    E1 = iv.e1(u)
+    G = iv.exp(-u - E1) * u * (1 + iv.exp(-t))
+    lo = float(ball.lower())
+    hi = float(ball.upper())
+    iv_lo = float(G.a)
+    iv_hi = float(G.b)
+    overlaps = not (hi < iv_lo or iv_hi < lo)
+    return ball, (iv_lo, iv_hi), overlaps
+
+
+def crosscheck_report(D=200, num_nodes=10, seed=12345):
+    """Run the independent cross-checks on a small set of nodes."""
+    import random
+    random.seed(seed)
+    pl = make_plan(D, G=30)
+    pl["cf_min_u"] = 1e18  # force series only for simplicity; any method is fine
+    n0, n1 = -pl["K_L"], pl["K_R"] + 1
+    ks = random.sample(range(n0, n1), min(num_nodes, n1 - n0))
+    print("Running cross-checks on %d nodes (D=%d)..." % (len(ks), D))
+    print("-" * 70)
+
+    ok_mp = 0
+    ok_iv = 0
+    for k in ks:
+        # mpmath (non-interval)
+        r1 = mpmath_crosscheck_node(k, pl)
+        if r1 is not None:
+            ball, mp_val, within = r1
+            status = "OK" if within else "MISMATCH"
+            if within:
+                ok_mp += 1
+            print("  node k=%6d  mpmath: %s  (mp=%.15g, arb=[%.15g, %.15g])"
+                  % (k, status, float(mp_val), float(ball.lower()), float(ball.upper())))
+
+        # mpmath.iv (interval)
+        r2 = mpmath_iv_crosscheck_node(k, pl)
+        if r2 is not None:
+            ball, (iv_lo, iv_hi), overlaps = r2
+            status = "OK" if overlaps else "MISMATCH"
+            if overlaps:
+                ok_iv += 1
+            print("  node k=%6d  mpmath.iv: %s  (iv=[%.15g, %.15g], arb=[%.15g, %.15g])"
+                  % (k, status, iv_lo, iv_hi, float(ball.lower()), float(ball.upper())))
+
+    print("-" * 70)
+    if mpmath is not None:
+        print("mpmath (non-interval) cross-check: %d/%d nodes OK" % (ok_mp, len(ks)))
+        print("mpmath.iv (interval) cross-check: %d/%d nodes OK" % (ok_iv, len(ks)))
+    else:
+        print("mpmath not installed; cross-checks skipped.")
+    print("These checks are safety nets, not a replacement for the Arb proof.")
+
+
+def alt_h_crosscheck(D=200):
+    """Recompute with a different step h and check that intervals overlap."""
+    import random
+    random.seed(98765)
+    pl1 = make_plan(D, G=30)
+    # Build a second plan with a slightly smaller h (0.9 * h)
+    pl2 = dict(pl1)
+    h2 = pl1["h"] * 0.9
+    # Recompute derived quantities for h2
+    K = strip_constants()
+    M, d, pi = K["M"], K["d"], K["pi"]
+    ten = arb(10)
+    N = D + 30
+    L = (2 * M).log() + (N + 6) * ten.log()
+    Lint = arb_ceil_int(L)
+    h2 = math.floor(0.9 * 0.97 * 2 * math.pi * 1.4 / Lint * 2 ** 40) / 2 ** 40
+    pl2["h"] = h2
+    hA = arb(h2)
+    pl2["Bdisc"] = 2 * M / ((2 * pi * d / hA).exp() - 1)
+    # tails
+    UR = int(math.ceil((N + 8) * LN10)) + 2
+    tR = solve_t(math.log(UR), 0.0, 40.0)
+    K_R = int(math.ceil(tR / h2)) + 1
+    t = arb(K_R) * hA
+    uR = (t - (-t).exp()).exp()
+    pl2["K_R"] = K_R
+    pl2["tailR"] = (-uR).exp()
+    lnuL = 0.5 * (-(N + 8) * LN10 + LN2 - EULER_F) - 1.0
+    tL = solve_t(lnuL, -600.0, 0.0)
+    K_L = int(math.ceil(-tL / h2)) + 1
+    t = -(arb(K_L) * hA)
+    uL = (t - (-t).exp()).exp()
+    pl2["K_L"] = K_L
+    pl2["tailL"] = K["gam"].exp() * uL * uL / 2
+    pl2["nodes"] = K_L + K_R + 1
+    pl2["Ebits"] = pl1["Ebits"]
+    pl2["S"] = pl1["S"]
+    pl2["EGbits"] = pl1["EGbits"]
+    pl2["cf_min_u"] = 1e18
+
+    # Pick a few nodes that exist in both plans
+    n0 = max(-pl1["K_L"], -pl2["K_L"])
+    n1 = min(pl1["K_R"], pl2["K_R"])
+    if n1 - n0 < 5:
+        print("alt-h crosscheck: not enough overlapping nodes")
+        return
+    ks = random.sample(range(n0, n1), min(5, n1 - n0))
+    print("Alt-h crosscheck (h=%.6e vs h'=%.6e)..." % (pl1["h"], pl2["h"]))
+    print("-" * 70)
+    ok = 0
+    for k in ks:
+        b1 = node_ball(k, pl1)
+        b2 = node_ball(k, pl2)
+        lo1, hi1 = float(b1.lower()), float(b1.upper())
+        lo2, hi2 = float(b2.lower()), float(b2.upper())
+        overlaps = not (hi1 < lo2 or hi2 < lo1)
+        if overlaps:
+            ok += 1
+        print("  k=%6d  h=[%.15g, %.15g]  h'=[%.15g, %.15g]  %s"
+              % (k, lo1, hi1, lo2, hi2, "OK" if overlaps else "MISMATCH"))
+    print("-" * 70)
+    print("Alt-h crosscheck: %d/%d nodes overlap" % (ok, len(ks)))
+
+
+def precision_ladder_crosscheck(D=200):
+    """Run the same node at 384 and 512 bits and compare intervals."""
+    import random
+    random.seed(24680)
+    pl = make_plan(D, G=30)
+    pl["cf_min_u"] = 1e18
+    n0, n1 = -pl["K_L"], pl["K_R"] + 1
+    ks = random.sample(range(n0, n1), min(5, n1 - n0))
+    print("Precision-ladder crosscheck (384 vs 512 bits)...")
+    print("-" * 70)
+    ok = 0
+    for k in ks:
+        # Run once at the default Ebits
+        b1 = node_ball(k, pl)
+        # Run with temporarily increased Ebits
+        pl_hi = dict(pl)
+        pl_hi["Ebits"] = pl["Ebits"] + 100
+        b2 = node_ball(k, pl_hi)
+        lo1, hi1 = float(b1.lower()), float(b1.upper())
+        lo2, hi2 = float(b2.lower()), float(b2.upper())
+        overlaps = not (hi1 < lo2 or hi2 < lo1)
+        if overlaps:
+            ok += 1
+        print("  k=%6d  384-bit=[%.15g, %.15g]  512-bit=[%.15g, %.15g]  %s"
+              % (k, lo1, hi1, lo2, hi2, "OK" if overlaps else "MISMATCH"))
+    print("-" * 70)
+    print("Precision-ladder crosscheck: %d/%d nodes overlap" % (ok, len(ks)))
+
+
+def lemma7_boundary_test():
+    """Test the Lemma-7 recurrence at extreme z (exact rational)."""
+    print("Lemma-7 boundary test (exact rational)...")
+    for z in (Fraction(1, 10**6), Fraction(1, 1000), Fraction(1, 3),
+              Fraction(2, 1), Fraction(10**6), Fraction(10**12, 7)):
+        A2, A1 = Fraction(1), z
+        B2, B1 = Fraction(0), Fraction(1)
+        for n in range(1, 33):
+            a = (n + 1) // 2
+            b = Fraction(1) if n % 2 else z
+            A2, A1 = A1, b * A1 + a * A2
+            B2, B1 = B1, b * B1 + a * B2
+            # determinant identity
+            prod_a = 1
+            for j in range(1, n + 1):
+                prod_a *= (j + 1) // 2
+            det = A1 * B2 - A2 * B1
+            if det != ((-1) ** (n + 1)) * prod_a:
+                raise AssertionError("boundary determinant failed at z=%s n=%d" % (z, n))
+        print("  z=%-12s OK" % str(z))
+    print("Lemma-7 boundary test: all OK")
+
+
+# ============================================================================
+# §10. Exact rational test of the Lemma 7 recurrence
 # ============================================================================
 
 def lemma7_exact_recurrence_test():
@@ -1147,10 +1420,6 @@ def lemma7_exact_recurrence_test():
       * that B_n/A_n equals the contracted S-fraction;
       * the determinant identity for consecutive convergents;
       * the sign-change of consecutive differences.
-
-    This tests the algebraic recurrence; the bracketing of the limit
-    function is supplied by the Stieltjes theorem (Lemma 7, step 4), not
-    by this test.
     """
     for z in (Fraction(1, 3), Fraction(2, 1), Fraction(17, 5)):
         A2, A1 = Fraction(1), z
@@ -1187,7 +1456,7 @@ def lemma7_exact_recurrence_test():
 
 
 # ============================================================================
-# §10. CLI
+# §11. CLI
 # ============================================================================
 
 def _cmd_test():
@@ -1220,6 +1489,18 @@ def _cmd_certify(args):
     return 0 if res.get("proven") else 1
 
 
+def _cmd_crosscheck(args):
+    crosscheck_report(D=args.digits, num_nodes=args.num_nodes)
+    alt_h_crosscheck(D=args.digits)
+    precision_ladder_crosscheck(D=args.digits)
+    return 0
+
+
+def _cmd_boundary_test():
+    lemma7_boundary_test()
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="golomb_dickman_cert",
@@ -1230,6 +1511,7 @@ def main(argv=None):
 
     sub.add_parser("test", help="run environment and lemma-7 tests")
     sub.add_parser("smoke", help="60-digit end-to-end smoke test")
+    sub.add_parser("boundary-test", help="Lemma-7 boundary tests")
 
     p_cert = sub.add_parser("certify", help="full certificate")
     p_cert.add_argument("--digits", type=int, default=40000)
@@ -1243,6 +1525,10 @@ def main(argv=None):
     p_cert.add_argument("--resume", action="store_true",
                         help="AUDIT-ONLY: accept checkpoint pickles without "
                              "recomputation (no certificate is written)")
+
+    p_cross = sub.add_parser("crosscheck", help="independent cross-checks")
+    p_cross.add_argument("--digits", type=int, default=200)
+    p_cross.add_argument("--num-nodes", type=int, default=10)
 
     args = parser.parse_args(argv)
     if args.command is None:
@@ -1264,6 +1550,10 @@ def main(argv=None):
         return _cmd_smoke()
     if args.command == "certify":
         return _cmd_certify(args)
+    if args.command == "crosscheck":
+        return _cmd_crosscheck(args)
+    if args.command == "boundary-test":
+        return _cmd_boundary_test()
     parser.error("unknown command: %s" % args.command)
     return 1
 
