@@ -1,112 +1,138 @@
-# Постоянная Голомба–Дикмана: 30 000 доказанных знаков
+# Постоянная Голомба–Дикмана: 40 000 доказанных знаков
 
-![digits](https://img.shields.io/badge/decimals-30_000_certified-brightgreen)
-![method](https://img.shields.io/badge/method-interval%20arithmetic-blue)
-![python](https://img.shields.io/badge/python-3.11%2B-3776AB)
-![license](https://img.shields.io/badge/license-MIT-green)
+$$\lambda=\int_0^\infty F(u)\,du,\qquad F(u)=e^{-u-E_1(u)}
+=0.62432998854355087099\ldots$$
 
-Строгое вычисление первых **30 000 десятичных знаков** постоянной Голомба–Дикмана
+Здесь $E_1$ — интегральная показательная функция.
 
-$$\lambda=\int_0^\infty F(u)\,du,\qquad F(u)=e^{-u-E_1(u)}=0.62432998854355087099\ldots$$
+## Результат
 
-Здесь $E_1$ — интегральная показательная функция. Постоянная возникает, например, как асимптотическая длина наибольшего цикла случайной перестановки: $\mathbb{E}\,[L_{\max}] \sim \lambda n$.
+В файле [`golomb_dickman_40000_certified.txt`](golomb_dickman_40000_certified.txt)
+лежит целочисленный интервал $[\Lambda_-,\Lambda_+]\ni\lambda$, для которого
 
-> **Главный результат.** В файле [`golomb_dickman_30000_certified.txt`](golomb_dickman_30000_certified.txt) лежит целочисленный интервал $[\Lambda_-,\Lambda_+]\ni\lambda$, для которого
-> $$\left\lfloor 10^{30000}\Lambda_-\right\rfloor=\left\lfloor 10^{30000}\Lambda_+\right\rfloor .$$
-> Значит, первые 30 000 знаков **доказаны** (усечение, без округления), а не просто вычислены с плавающей точкой.
+$$\left\lfloor 10^{40000}\Lambda_-\right\rfloor
+=\left\lfloor 10^{40000}\Lambda_+\right\rfloor .$$
 
----
+Значит, первые **40 000** десятичных знаков доказаны (усечение, без округления),
+а не просто вычислены с плавающей точкой. Ширина интервала — примерно
+$10^{-40042.26}$, то есть остаётся около 42 запасных знаков.
 
-## Содержание
+- [`golomb_dickman_40000_digits.txt`](golomb_dickman_40000_digits.txt) — 40 000 цифр после запятой одной строкой.
+- [`b084945.txt`](b084945.txt) — готовый b-file для OEIS A084945, термы `n = 0..39999`.
 
-- [Что доказано и в каком смысле](#что-доказано-и-в-каком-смысле)
-- [Файлы репозитория](#файлы-репозитория)
-- [Быстрая проверка сертификата](#быстрая-проверка-сертификата)
-- [Как запустить вычисление](#как-запустить-вычисление)
-- [Извлечение знаков из сертификата](#извлечение-знаков-из-сертификата)
-- [Как это устроено](#как-это-устроено)
-- [Чекпоинты и возобновление](#чекпоинты-и-возобновление)
-- [Форматы файлов](#форматы-файлов)
-- [Оговорки и ограничения](#оговорки-и-ограничения)
-- [Ссылки](#ссылки)
-- [Лицензия](#лицензия)
+## Файлы
 
----
-
-## Что доказано и в каком смысле
-
-Доказательство **условно только по отношению к явно перечисленной базе доверия**:
-
-1. корректность интервальной арифметики [Arb](https://arblib.org/) (библиотека `python-flint`): каждый `arb` — шар, содержащий истинное значение;
-2. теорема о трапециях для аналитических функций в полосе — Trefethen & Weideman, *SIAM Review* 56 (2014), Thm 5.1;
-3. классическая теорема Стилтьеса о двусторонних оценках подходящими дробями (Wall, *Analytic Theory of Continued Fractions*; Jones–Thron);
-4. леммы §1 исходного кода (с приведёнными доказательствами);
-5. точная целочисленная арифметика Python.
-
-Двойная точность (`float`) используется **только** для выбора метода и рабочей точности; ни одна граница ошибки на ней не держится. Каждый радиус шара проверяется явно (`rad < eps`), при необходимости точность повышается и узел пересчитывается.
-
-Результат независимо сверяется с [OEIS A084945](https://oeis.org/A084945) по первым 95 знакам.
-
----
-
-## Файлы репозитория
-
-| Файл / каталог | Размер | Назначение |
+| Файл | Размер | Назначение |
 |---|---:|---|
-| `golomb_dickman_30000_certified.txt` | ~90 KB | **Сертификат**: границы интервала и 30 000 знаков |
-| `golomb_dickman_30000_digits.txt` | ~30 KB | Только 30 000 цифр после запятой, одной строкой |
-| `golomb_dickman_rigorous_fast.py` | ~48 KB | Основной вычислитель (экспорт Colab-ноутбука) |
-| `golomb_dickman_digit.py` | ~4.5 KB | Утилита: сертификат → файл цифр |
-| `gd_rigorous_ckpt_30000/` | ~40 MB | 886 чекпоинтов кусков для D = 30 000 |
-| `gd_rigorous_ckpt_60/` | ~10 KB | Чекпоинты пробного прогона D = 60 |
-| `smoke_60.txt` | 435 B | Сертификат пробного прогона (60 знаков) |
-| `LICENSE` | — | MIT |
+| `golomb_dickman.py` | ~57 KB | Вычислитель (экспорт ноутбука); `main()` делает пробу на 60 знаках, затем расчёт на 40 000 |
+| `golomb_dickman_40000_certified.txt` | ~117 KB | Сертификат: границы интервала и 40 000 знаков |
+| `golomb_dickman_40000_digits.txt` | 40 001 B | Только 40 000 цифр после запятой |
+| `b084945.txt` | ~302 KB | b-file для OEIS A084945: 40 000 термов, только данные |
+| `verify_40000.py` | ~5 KB | Автономная проверка сертификата, цифр и b-file |
+| `verify_checkpoints.py` | ~21 KB | Аудит всех 1 209 чекпоинтов: структура, покрытие, точные суммы |
+| `verify_checkpoints_arb.py` | ~40 KB | Глубокая проверка: пересчёт узлов в Arb (нужен `python-flint`) |
+| `verify_nodes_decimal.py` | ~18 KB | Пересчёт хвостов и выбранных чанков без Arb (`decimal`) |
+| `VERIFICATION.md` | ~12 KB | Что и как проверяется, найденные дефекты, база доверия |
+| `SHA256SUMS.txt` | ~1.5 KB | Контрольные суммы всех артефактов (канонический LF) |
+| `.gitattributes` | 711 B | Запрет автопреобразования переводов строк в git |
+| `.gitignore` | 214 B | Исключение `__pycache__/` и локальных кэшей |
+| `smoke_60.txt` | 431 B | Сертификат пробного прогона на 60 знаках |
+| `gd_rigorous_ckpt_40000/` | ~70 MB | Чекпоинты кусков для D = 40 000 (1210 файлов) |
 
-Первые знаки:
+## Быстрая проверка
 
-```text
-0.624329988543550870992936383100837244179642620180529286973551902495638088855113254462460276195539868869140410394062743141565559118325420596284465847978987572474465...
-```
+Нужен только Python 3.11+; сторонние пакеты не требуются.
 
----
-
-## Быстрая проверка сертификата
-
-Проверка занимает секунды и не требует `python-flint` — только Python 3.11+ (из-за лимита на преобразование больших целых в строку).
-
-```python
-import re, sys
-from pathlib import Path
-sys.set_int_max_str_digits(200_000)
-
-text = Path("golomb_dickman_30000_certified.txt").read_text(encoding="utf-8")
-S   = int(re.search(r"# S=(\d+)", text).group(1))
-lo  = int(re.search(r"lam_lo=(\d+)", text).group(1))
-hi  = int(re.search(r"lam_hi=(\d+)", text).group(1))
-digits = [line[2:] for line in text.splitlines() if line.startswith("0.")][0]
-D = len(digits)
-
-a = (lo * 10**D) >> S      # floor(10^D * Lambda_-)
-b = (hi * 10**D) >> S      # floor(10^D * Lambda_+)
-assert a == b, "интервал пересекает границу десятичной ячейки"
-assert str(a).zfill(D) == digits, "цифры не совпадают с сертификатом"
-print("OK:", D, "знаков доказаны; ширина интервала ~ 10^-30042")
+```bash
+python verify_40000.py
 ```
 
 Ожидаемый вывод:
 
 ```text
-OK: 30000 знаков доказаны; ширина интервала ~ 10^-30042
+OK: 40000 digits certified
+  interval: lam_lo/2^133074 .. lam_hi/2^133074
+  interval width ~ 10^-40042.3
+  b-file: 40000 terms, indices 0..39999
+  first 102 digits match OEIS A084945
+  SHA-256:
+    ...
 ```
 
----
+Скрипт проверяет:
 
-## Как запустить вычисление
+1. что сертифицированный интервал не пересекает границу десятичной ячейки;
+2. что цифры в сертификате равны $\lfloor 10^{40000}\lambda\rfloor$;
+3. что отдельный файл цифр совпадает с сертификатом;
+4. что b-file содержит ровно 40 000 термов `n = 0..39999` и каждая цифра совпадает;
+5. что первые 102 цифры совпадают с OEIS A084945.
+
+## Полная проверка
+
+`verify_40000.py` проверяет только опубликованные артефакты. Чтобы проверить
+сами исходные данные, нужны ещё три скрипта; подробности — в
+[`VERIFICATION.md`](VERIFICATION.md).
+
+### 1. Аудит всех чекпоинтов (только стандартная библиотека)
+
+```bash
+python verify_checkpoints.py
+```
+
+Скрипт заново читает все 1 209 файлов `gd_rigorous_ckpt_40000/c_*.pkl`,
+проверяет структуру и покрытие индексов `[-K_L, K_R]`, пересчитывает точные
+целые суммы `Lsum`/`Hsum` и убеждается, что из них вместе с поправками
+`B` и `TR+TL+B` получаются ровно те концы интервала, что записаны в
+сертификате. Ожидаемый вывод:
+
+```text
+OK: checkpoint audit passed
+  meta: D=40000 G=30 Ebits=133010 S=133074 K_L=117064 K_R=124623 chunk=200
+  chunks: 1209 (expected 1209)
+  nodes covered: 241688
+  lower correction B = 1
+  upper correction C = TR + TL + B = 65673984721697
+  certificate width: 10^-40042.260249
+  guard digits: 40042.26
+```
+
+### 2. Пересчёт узлов в Arb (нужен `python-flint`)
+
+```bash
+python -m pip install python-flint
+python verify_checkpoints_arb.py --audit          # константы и поправки
+python verify_checkpoints_arb.py --sample 20      # 20 кусков, ~минуты
+python verify_checkpoints_arb.py --all --jobs 8   # все 1 209 кусков, часы
+```
+
+Глубокая проверка не импортирует `golomb_dickman.py`: она независимо
+реализует ряд, цепную дробь Стилтьеса и асимптотику для $E_1$, заново
+считает $M$, $B_{\rm disc}$, $\tau_R$, $\tau_L$ и проверяет, что каждый
+пересчитанный кусок лежит внутри сохранённого. Результаты кэшируются в
+`%LOCALAPPDATA%\gd_verify_cache\D40000` (вне репозитория); повторный запуск
+продолжает с места остановки.
+
+### 3. Пересчёт без Arb (запасной вариант)
+
+```bash
+python verify_nodes_decimal.py --plan            # B_disc и хвосты
+python verify_nodes_decimal.py --chunks 20       # суммы 20 чанков, 100 знаков
+python verify_nodes_decimal.py --methods         # сверка трёх формул для E1
+```
+
+Нужен только `decimal` из стандартной библиотеки. `--plan` заново считает
+$M$, $B_{\rm disc}$, $\tau_R$, $\tau_L$ и проверяет, что из них получаются
+ровно те поправки, которые записаны в сертификате; `--chunks` пересчитывает
+выбранные чанки и сверяет первые 100 знаков суммы с сохранённым интервалом.
+Это численная согласованность, а не доказательство: полный строгий пересчёт —
+только `verify_checkpoints_arb.py --all`.
+
+## Как воспроизвести
 
 ### Требования
 
-- Python 3.11+ (рекомендуется);
-- [`python-flint`](https://github.com/flintlib/python-flint) — ставится автоматически при первом запуске, если его нет (нужен интернет);
+- Python 3.11+;
+- [`python-flint`](https://github.com/flintlib/python-flint) (Arb);
 - желательно многоядерный CPU; расчёт распараллеливается по процессам.
 
 ```bash
@@ -116,179 +142,90 @@ python -m pip install python-flint
 ### Полный прогон
 
 ```bash
-python golomb_dickman_rigorous_fast.py
+python golomb_dickman.py
 ```
 
-Скрипт:
+`main()` сначала выполняет пробный прогон на 60 знаках, затем основной расчёт
+на 40 000 знаков. Основной прогон занимает **часы CPU**; его можно прерывать —
+прогресс сохраняется в `gd_rigorous_ckpt_40000/`. Чекпоинты привязаны к набору
+параметров `(D, G, h, Ebits, K_L, K_R, chunk)`, поэтому при смене `G` или `D`
+нужен новый каталог.
 
-1. проверяет семантику API `python-flint`, на которую опирается доказательство;
-2. выполняет **пробный прогон на 60 знаках** (`smoke_60.txt`) — секунды;
-3. только после успешной пробы запускает основной расчёт на 30 000 знаков.
+### База доверия
 
-Основной прогон занимает **часы CPU**; его можно прерывать — прогресс сохраняется в чекпоинты (см. ниже).
+Доказательство условно только по отношению к явно перечисленной базе доверия:
 
-### Свой размер D
+1. корректность интервальной арифметики [Arb](https://arblib.org/) (`python-flint`);
+2. теорема о трапециях для аналитических функций в полосе
+   (Trefethen & Weideman, *SIAM Review* 56 (2014), Thm 5.1);
+3. классическая теорема Стилтьеса о двусторонних оценках подходящими дробями;
+4. леммы из docstring `golomb_dickman.py` (§1–§7);
+5. точная целочисленная арифметика Python.
 
-`main()` — это демонстрационный сценарий с жёстко заданным `DIGITS = 30000`. Чтобы посчитать другое число знаков, вызовите функцию напрямую:
+Это не проверка в proof assistant. Подробности метода — в docstring
+`golomb_dickman.py` и в [корневом README](../README.md) для версии на 30 000 знаков.
 
-```python
-from golomb_dickman_rigorous_fast import run_certificate
+## B-file для OEIS
 
-res = run_certificate(
-    D=1000,              # сколько знаков доказать
-    G=30,                # запасные знаки (guard)
-    jobs=0,              # 0 = по числу ядер
-    ckpt="gd_ckpt_1000", # каталог чекпоинтов; None = по умолчанию
-    out="cert_1000.txt",
-)
-print(res["proven"], res["digits_lo"][:80])
-```
+Файл `b084945.txt`:
 
-Полезные параметры:
+- 40 000 термов, `n = 0..39999`;
+- только данные, без комментариев;
+- ASCII, LF, без BOM и табов;
+- завершающая пустая строка;
+- 40 001 строка, 308 891 байт;
+- SHA-256: `c73af643198da299d2e624e3c2f69d05439efcddbbefa7cec176ac63f993bed3`.
 
-| Параметр | Смысл |
-|---|---|
-| `D` | число доказываемых десятичных знаков |
-| `G` | запас: знаки $D+1 \ldots D+G$ не должны быть цепочкой `0`/`9` |
-| `jobs` | число процессов (`0` — автоматически) |
-| `chunk` | размер куска в узлах (`0` — автоматически) |
-| `ckpt` | каталог чекпоинтов; `None` — `gd_rigorous_ckpt_<D>` |
-| `max_hours` | мягкая остановка; `0` — без ограничения |
-| `cf_min_u` | порог $u$ для цепной дроби; `None` — автотюн; `1e18` — только ряд |
-
-> **Важно.** Чекпоинты привязаны к набору `(D, G, h, Ebits, K_L, K_R, chunk)`. При смене `G` или `D` используйте новый каталог `ckpt`, иначе прогон остановится с сообщением о несовпадении метаданных.
-
----
-
-## Извлечение знаков из сертификата
-
-Утилита `golomb_dickman_digit.py` превращает сертификат в файл только с цифрами:
-
-```bash
-# по умолчанию: golomb_dickman_30000_certified.txt -> golomb_dickman_30000_digits.txt
-python golomb_dickman_digit.py
-
-# свои файлы, разбивка по 100 знаков и префикс "0."
-python golomb_dickman_digit.py -i cert.txt -o digits.txt -g 100 --prefix
-
-# ожидать другое число знаков (0 = не проверять)
-python golomb_dickman_digit.py --expect 1000
-```
-
-Опции:
+Текущий b-file в OEIS A084945 содержит только `n = 0..101` (синтезирован из
+записи), поэтому этот файл его заменяет. Текст ссылки:
 
 ```text
--i, --input FILE    входной сертификат
--o, --output FILE   выходной файл
--g, --group N       разбить на строки по N цифр (0 = одна строка)
-    --prefix        добавить "0." перед цифрами
-    --expect D      ожидаемая длина (по умолчанию 30000; 0 = не проверять)
+YOUR NAME, <a href="b084945.txt">Table of n, a(n) for n=0..39999</a>
 ```
 
-Утилита также предупреждает, если первые знаки не совпадают с OEIS A084945.
-
----
-
-## Как это устроено
-
-Кратко; полные формулировки и доказательства — в docstring `golomb_dickman_rigorous_fast.py` (§1–§7).
-
-1. **Подстановка Такахаси–Мори.** Заменой $u(t)=\exp(t-e^{-t})$ интеграл сводится к
-   $$\lambda=\int_{\mathbb R} G(t)\,dt,\qquad G(t)=F(u(t))\,u(t)\,(1+e^{-t}).$$
-2. **Правило трапеций с явной ошибкой.** Для аналитической $G$ в полосе $|\operatorname{Im}z|\le 7/5$ оценка Trefethen–Weideman даёт
-   $$\left|\int_{\mathbb R}G-h\sum_k G(kh)\right|\le \frac{2M}{e^{2\pi d/h}-1},$$
-   где $M$ — явная граница $\sup_{|y|\le d}\int|G(x+iy)|\,dx$ (Лемма 4).
-3. **Хвосты суммы.** Отброшенные хвосты оцениваются через $e^{-u}$ и $\tfrac12 e^\gamma u^2$ (Лемма 3) и проверяются в шарах.
-4. **Шары для узлов $G(kh)$.** Три взаимозаменяемых метода, все корректные при любом $u>0$:
-   - степенной ряд для малых/средних $u$ (с прямоугольным расщеплением для скорости);
-   - цепная дробь Стилтьеса для средних/больших $u$;
-   - асимптотический ряд для очень больших $u$.
-   Метод выбирается по `float`, но корректность не зависит от выбора: радиус готового шара проверяется, при провале точность повышается.
-5. **Параллельные куски.** Процессы возвращают пары целых $[L,H]$ — строгое включение суммы шаров в единицах $2^{-S}$; через границы процессов ничего не теряется.
-6. **Финальная арифметика.** Всё складывается точными целыми:
-   $$\Lambda_-=\lfloor hL\rfloor-B,\qquad \Lambda_+=\lceil hH\rceil+\tau_R+\tau_L+B,$$
-   затем проверяется $\lfloor10^D\Lambda_-\rfloor=\lfloor10^D\Lambda_+\rfloor$.
-
----
-
-## Чекпоинты и возобновление
-
-Каталог `gd_rigorous_ckpt_30000/` содержит:
-
-- `meta.pkl` — метаданные прогона;
-- `c_<lo>.pkl` — по одному файлу на кусок узлов (886 кусков).
-
-Прогресс сохраняется после каждого куска атомарно (запись во временный файл + `os.replace`). Чтобы продолжить прерванный прогон, запустите его снова с тем же `ckpt` — готовые куски будут прочитаны, недоделанные пересчитаны. Дорогие куски (большие $u$) ставятся первыми.
-
-При переносе между сессиями (например, Kaggle/Colab) скопируйте каталог чекпоинтов целиком, включая `meta.pkl`.
-
----
-
-## Форматы файлов
-
-### Сертификат
-
-```text
-# Golomb-Dickman constant, 30000 decimals, CERTIFIED by interval arithmetic (trapezoid rule + Arb balls)
-# S=99855 lam_lo=1398399...913
-# lam_hi=1398399...575
-0.62432998854355087099...
-```
-
-- `S` — масштаб: границы заданы в единицах $2^{-S}$;
-- `lam_lo`, `lam_hi` — целые границы $[\Lambda_-,\Lambda_+]$;
-- последняя строка — ровно `D` цифр после запятой (усечение, не округление).
-
-### Файл цифр
-
-Одна непрерывная строка из `D` цифр `0-9` без `0.` и переводов строк (по умолчанию). С опциями `-g` и `--prefix` формат меняется соответственно.
-
----
-
-## Оговорки и ограничения
-
-- Это **не** формальная проверка в proof assistant. Доказательство условно относительно Arb и цитируемых теорем; ошибка в Arb или в цитируемой теореме не покрывается.
-- Границы доказывают именно **усечённые** первые 30 000 знаков. Это не утверждение о 30 001-м знаке.
-- `smoke_60.txt` — самостоятельный сертификат на 60 знаков; он нужен как быстрый end-to-end тест конвейера, а не как замена основному результату.
-- Утилита `golomb_dickman_digit.py` проверяет только длину и префикс по OEIS; криптографической проверки целостности файлов нет.
-- В исходном docstring честно указано: на стороне автора ноутбук исполнялся не на настоящем Arb, а на имитации шаров поверх `mpmath` (все ветви узлов, чекпоинты, параллельность) при $D=60$ и $D=150$; работу с реальным `python-flint` проверяет `api_selftest()`. Сертификат на 30 000 знаков в этом репозитории получен полным прогоном и проверяется независимо приведённым выше сниппетом.
-- Время и память сильно зависят от машины; ориентируйтесь на автотюн и пробные запуски `D=1000`, `D=3000`.
-
----
-
-## Ссылки
-
-- OEIS [A084945](https://oeis.org/A084945) — десятичные знаки постоянной Голомба–Дикмана.
-- Wikipedia: [Golomb–Dickman constant](https://en.wikipedia.org/wiki/Golomb%E2%80%93Dickman_constant).
-- L. N. Trefethen, J. A. C. Weideman, *The exponentially convergent trapezoidal rule*, SIAM Review 56 (2014).
-- [Arb](https://arblib.org/) / [python-flint](https://github.com/flintlib/python-flint) — интервальная арифметика с плавающей точкой произвольной точности.
-- D. S. Mitrinović, J. E. Pečarić, A. M. Fink — классические оценки через подходящие дроби (теорема Стилтьеса).
-
----
+Пошаговая инструкция и письмо для редакторов — в
+[`OEIS_SUBMISSION.md`](OEIS_SUBMISSION.md). Публикация в Zenodo/arXiv и анонс
+в SeqFan — в [`PUBLICATION_CHECKLIST.md`](PUBLICATION_CHECKLIST.md).
 
 ## Цитирование
 
 ```bibtex
-@misc{pozdnyakov2026golombdickman,
-  title        = {Golomb--Dickman constant: 30{,}000 certified decimal digits},
+@misc{pozdnyakov2026golombdickman40000,
+  title        = {Golomb--Dickman constant: 40{,}000 certified decimal digits},
   author       = {Pozdnyakov, Konstantin},
   year         = {2026},
-  howpublished = {\url{https://github.com/fix27/golomb_dickman_30000}},
-  note         = {Rigorous interval-arithmetic certificate using Arb}
+  howpublished = {\url{https://github.com/fix27/golomb_dickman_30000/tree/main/40000}},
+  note         = {Rigorous interval-arithmetic certificate using Arb;
+                  OEIS A084945 b-file with 40{,}000 terms}
 }
 ```
 
----
-
 ## Лицензия
 
-[MIT](LICENSE) © 2026 Поздняков Константин.
+[MIT](../LICENSE) © 2026 Поздняков Константин.
 
 ---
 
 <details>
 <summary><b>English summary</b></summary>
 
-This repository contains a rigorous interval-arithmetic certificate for the first **30,000 decimal digits** of the Golomb–Dickman constant $\lambda = \int_0^\infty e^{-u-E_1(u)}\,du = 0.6243299885\ldots$. The certificate provides integer bounds $[\Lambda_-,\Lambda_+]\ni\lambda$ such that $\lfloor 10^{30000}\Lambda_-\rfloor=\lfloor 10^{30000}\Lambda_+\rfloor$, so the digits are proven by truncation. The computation uses the trapezoidal rule after the Takahashi–Mori substitution, explicit tail and discretization bounds (Trefethen–Weideman), Stieltjes continued fractions, and Arb balls via `python-flint`. Trust base: Arb correctness and the cited theorems. See `golomb_dickman_rigorous_fast.py` for the full proof and `golomb_dickman_30000_certified.txt` for the result.
+This directory contains a rigorous interval-arithmetic certificate for the
+first **40,000 decimal digits** of the Golomb–Dickman constant
+$\lambda = \int_0^\infty e^{-u-E_1(u)}\,du = 0.6243299885\ldots$.
+The certificate gives integer bounds $[\Lambda_-,\Lambda_+]\ni\lambda$ with
+$\lfloor 10^{40000}\Lambda_-\rfloor=\lfloor 10^{40000}\Lambda_+\rfloor$, so the
+digits are proven by truncation. The interval width is about $10^{-40042.26}$.
+
+The computation uses the trapezoidal rule after the Takahashi–Mori substitution,
+explicit tail and discretization bounds (Trefethen–Weideman), Stieltjes continued
+fractions, and Arb balls via `python-flint`. Trust base: Arb correctness and the
+cited theorems. See `golomb_dickman.py` for the full proof and
+`golomb_dickman_40000_certified.txt` for the result. `b084945.txt` is a ready
+b-file for OEIS A084945 with terms $n=0\ldots39999$.
+
+Run `python verify_40000.py` for a dependency-free check of the published
+certificate, digits and b-file, and `python verify_checkpoints.py` for the
+stdlib audit of all 1,209 chunks. `verify_checkpoints_arb.py --all` recomputes
+every node with Arb (`python-flint`). See `VERIFICATION.md`.
 
 </details>
