@@ -1,0 +1,10 @@
+# SHA-256 checksums for the verification suite in checks/.
+# Run from the bundle root:  sha256sum -c checks/SHA256SUMS.txt
+# Canonical form: ASCII text, LF line endings, no BOM.
+64dda44038bdfe305a29051736ea51c0dea51e04a7c6dba3b74f9648d3698059  checks/README.md
+e52a75b6ec20aabb21f84f10b14348203586695a9a03e7244584edf96e0db342  checks/run_all.py
+02aacd2ff9f663b3123a13f471e9994ea736d2f865fc2c3996da383c1e700df8  checks/verify_40000.py
+dc521cd66444abd6bda5f7a351040d6e5fcd81bfa5e368e39b438c713790c1a4  checks/verify_checkpoints.py
+70de4a9271acb223680a5e798ae139c13ad9359f532a62e348d23907067d3c3f  checks/verify_checkpoints_arb.py
+1dd3ff7d993d03c2a6e2da6d828f41564b058025a9710b9a80cb4623ab1eaf18  checks/verify_mathworld.py
+803894155e5f7875bdb9a1034965b0015fc70758207e273a400cce9fd8056bc2  checks/verify_nodes_decimal.py
