@@ -163,7 +163,8 @@ python golomb_dickman.py
 5. точная целочисленная арифметика Python.
 
 Это не проверка в proof assistant. Подробности метода — в docstring
-`golomb_dickman.py` и в [корневом README](../README.md) для версии на 30 000 знаков.
+`golomb_dickman.py` и в [`../30000/README.md`](../30000/README.md) для версии
+на 30 000 знаков. Обзор репозитория — в [корневом README](../README.md).
 
 ## B-file для OEIS
 
@@ -194,7 +195,7 @@ YOUR NAME, <a href="b084945.txt">Table of n, a(n) for n=0..39999</a>
   title        = {Golomb--Dickman constant: 40{,}000 certified decimal digits},
   author       = {Pozdnyakov, Konstantin},
   year         = {2026},
-  howpublished = {\url{https://github.com/fix27/golomb_dickman_30000/tree/main/40000}},
+  howpublished = {\url{https://github.com/fix27/golomb-dickman-constant/tree/main/40000}},
   note         = {Rigorous interval-arithmetic certificate using Arb;
                   OEIS A084945 b-file with 40{,}000 terms}
 }

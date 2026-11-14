@@ -1,0 +1,9 @@
+-Q . GolombDickmanCoq
+
+Definitions.v
+Ddet_succ.v
+Ddet_eq.v
+Ps_step3.v
+Qs_step3.v
+S_to_J_contraction.v
+All.v

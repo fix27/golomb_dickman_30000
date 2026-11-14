@@ -7,7 +7,7 @@ OEIS — основной способ зафиксировать расшире
 ## 1. Zenodo DOI — самый быстрый цитируемый след
 
 Репозиторий уже публичный:
-https://github.com/fix27/golomb_dickman_30000
+https://github.com/fix27/golomb-dickman-constant
 
 Порядок:
 
@@ -77,7 +77,7 @@ Golomb-Dickman constant using interval arithmetic (Arb). The certificate
 gives integer bounds [L-, L+] with
 floor(10^40000 L-) = floor(10^40000 L+) = 624329...
 
-Data: https://github.com/fix27/golomb_dickman_30000/tree/main/40000
+Data: https://github.com/fix27/golomb-dickman-constant/tree/main/40000
 OEIS: https://oeis.org/A084945
 
 I have prepared a b-file with terms n=0..39999 (currently OEIS has 0..101).

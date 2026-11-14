@@ -63,7 +63,7 @@ YOUR NAME, <a href="b084945.txt">Table of n, a(n) for n=0..39999</a>
 The 40,000 digits are backed by a certified interval-arithmetic
 computation: floor(10^40000 * Lambda_-) = floor(10^40000 * Lambda_+).
 Certificate, verifier, and code:
-https://github.com/fix27/golomb_dickman_30000/tree/main/40000
+https://github.com/fix27/golomb-dickman-constant/tree/main/40000
 
 SHA-256 of b084945.txt:
 c73af643198da299d2e624e3c2f69d05439efcddbbefa7cec176ac63f993bed3
