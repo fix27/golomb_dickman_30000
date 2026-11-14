@@ -181,12 +181,12 @@ python checks/run_all.py --all    # всё сразу
 
 | Уровень | Команда | Что проверяет | Время |
 |---|---|---|---|
-| 1. Артефакты | `verify_40000.py` | сертификат, цифры, b-file | 0.2 с |
-| 2. Чекпоинты | `checks/verify_checkpoints.py` | все 1 209 чанков, точные суммы | 1 с |
+| 1. Артефакты | `verify_40000.py` | сертификат, цифры, b-file | 0.1 с |
+| 2. Чекпоинты | `checks/verify_checkpoints.py` | все 1 209 чанков, точные суммы | 0.5 с |
 | 3. Формулы | `checks/verify_nodes_decimal.py --methods` | три формулы для $E_1$ | 7 с |
 | 4. Константы | `checks/verify_nodes_decimal.py --plan` | $B_{\rm disc}$, $\tau_R$, $\tau_L$ | 0.4 с |
 | 5. Узлы (decimal) | `checks/verify_nodes_decimal.py --chunks 12` | 12 чанков, 100 знаков | 3 с |
-| 6. MathWorld | `checks/verify_mathworld.py` | 16 утверждений страницы | 92 с |
+| 6. MathWorld | `checks/verify_mathworld.py` | 16 утверждений страницы | 91 с |
 | 7. Простые | `checks/verify_mathworld.py --prime-limit 3000` | исчерпывающий перебор | 193 с |
 | 8. Узлы (Arb) | `checks/verify_checkpoints_arb.py --all` | все узлы в шаровой арифметике | часы |
 
