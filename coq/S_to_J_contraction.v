@@ -1,5 +1,7 @@
 From mathcomp Require Import all_ssreflect all_algebra.
 From mathcomp Require Import poly.
+From Coq Require Import Ring.
+From Coq Require Import Lia.
 From GolombDickmanCoq Require Import Definitions Ps_step3 Qs_step3.
 
 Set Implicit Arguments.
